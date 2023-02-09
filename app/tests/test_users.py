@@ -1,6 +1,6 @@
 import pytest
 from sqlalchemy import text
-from schemas import PydanticCreateUser
+from schemas import CreateUser, UpdateUser
 from models import User
 
 
@@ -33,7 +33,12 @@ def test_user_not_enough_permissions(role, user, permissions):
 
 
 def test_create_user_with_role(test_database, role):
-    user_pydantic = PydanticCreateUser(username='foo', password='foo',
-                                       role_id=role.id)
+    user_pydantic = CreateUser(username='foo', password='foo', role_id=role.id)
     obj = User.create(test_database, data=user_pydantic)
     assert role in obj.roles
+
+
+def test_update_user_with_role(test_database, role, user):
+    update_data = UpdateUser(password='updated')
+    res = User.update(test_database, pk=user.id, data=update_data)
+    assert res.password == user.password

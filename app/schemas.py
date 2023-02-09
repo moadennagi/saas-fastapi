@@ -1,38 +1,61 @@
+from __future__ import annotations
+
 from typing import List, Optional
 from pydantic import BaseModel
 
 
-class PydanticPermission(BaseModel):
+class PermissionSchema(BaseModel):
     id: int
     resource: str
     action: str
+    role_id: int
+    role: RoleSchema
 
     class Config:
         orm_mode = True
 
 
-class PydanticRole(BaseModel):
+class CreatePermission(PermissionSchema):
+    id: Optional[int]
+    role: Optional[RoleSchema]
+
+
+class UpdateSchema(PermissionSchema):
+    id: Optional[int]
+    role: Optional[RoleSchema]
+    resource: Optional[str]
+    action: Optional[str]
+
+
+class RoleSchema(BaseModel):
     id: int
     name: str
-    permissions: List[PydanticPermission]
+    permissions: List[PermissionSchema]
 
     class Config:
         orm_mode = True
 
 
-class PydanticUser(BaseModel):
+class UserSchema(BaseModel):
     id: int
     username: str
     password: str
     role_id: int
-    roles: Optional[List[PydanticRole]]
+    roles: Optional[List[RoleSchema]]
 
     class Config:
         orm_mode = True
 
 
-class PydanticCreateUser(PydanticUser):
+class CreateUser(UserSchema):
     id: Optional[str]
+
+
+class UpdateUser(UserSchema):
+    id: Optional[int]
+    username: Optional[str]
+    password: Optional[str]
+    role_id: Optional[int]
 
 
 class LoginData(BaseModel):

@@ -6,12 +6,21 @@ from crud import CRUDMixin
 from database.base import Base
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, relationship, Session
-from schemas import PydanticCreateUser
+from schemas import CreateUser, UpdateUser
 
 
 class ValidationError(Exception):
     def __init__(self, message: str = "") -> None:
         self.message = message
+
+    def __str__(self) -> str:
+        return self.message
+
+
+class ObjectNotFound(Exception):
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        self.message = kwargs.get('message')
+        super().__init__(*args)
 
     def __str__(self) -> str:
         return self.message
@@ -49,12 +58,32 @@ class User(Base, CRUDMixin):
         return True
 
     @classmethod
-    def create(cls, session: Session, *, data: PydanticCreateUser) -> User:
+    def create(cls, session: Session, *, data: CreateUser) -> User:
         role = Role.get(session, pk=data.role_id)
         if not role:
             raise ValidationError('Role not found')
         obj = cls(**data.dict(exclude={'role_id', 'roles'}))
         obj.roles.append(role)
+        session.add(obj)
+        session.commit()
+        session.refresh(obj)
+        return obj
+
+    @classmethod
+    def update(cls, session: Session, *, pk: int, data: UpdateUser) -> User:
+        role = None
+        obj = cls.get(session, pk=pk)
+        if not obj:
+            raise ObjectNotFound(message='Object not found')
+        if data.role_id:
+            role = Role.get(session, pk=data.role_id)
+            if role and role not in obj.roles:
+                obj.roles.append(role)
+        
+        data = data.dict(exclude_unset=True, exclude={'role', 'role_id'})
+        for k, v in data.items():
+            if getattr(obj, k) != v:
+                setattr(obj, k, v)
         session.add(obj)
         session.commit()
         session.refresh(obj)
