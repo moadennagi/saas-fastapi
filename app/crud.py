@@ -19,7 +19,7 @@ class CRUDMixin:
 
     @classmethod
     def get_multiple(
-        cls, session: Session, *, ids: list[int]
+        cls, session: Session, *, ids: List[int]
     ) -> List[Optional[Model]]:
         objs = session.query(cls).filter(cls.id)._in(ids)
 
